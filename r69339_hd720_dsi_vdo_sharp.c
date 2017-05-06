@@ -220,6 +220,137 @@ static void lcm_init(void)
 }
 extern int LcmPowerOffPMIC_V18(void);
 extern int LcmPowerOffPMIC_V28(void);
+#ifdef CONFIG_MTK_DISPTE_GPIO
+static const struct of_device_id DispTE_use_gpio_of_match[] = {
+	{.compatible = "mediatek,DispTE_gpio"},
+	{},
+};
+
+struct pinctrl *disptepinctrl = NULL;
+struct pinctrl_state *dispte_en_h = NULL;
+struct pinctrl_state *dispte_en_l = NULL;
+struct regulator *regVGP1lcm = NULL;
+struct regulator *regVGP2lcm = NULL;
+
+int LcmPowerOnPMIC(void)
+{
+        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
+        printk("%s,line = %d\n", __func__,__LINE__);
+        regulator_enable(regVGP2lcm);
+        msleep(10);
+        regulator_enable(regVGP1lcm);
+        msleep(10);
+        }
+}
+
+int LcmPowerOffPMIC_V18(void)
+{
+#if 0
+        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
+        printk("%s,line = %d\n", __func__,__LINE__);
+        regulator_disable(regVGP2lcm);
+        //msleep(10);
+        //regulator_disable(regVGP1lcm);
+        //msleep(10);
+        }
+#endif
+        return 0;
+}
+
+int LcmPowerOffPMIC_V28(void)
+{
+#if 0
+        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
+        printk("%s,line = %d\n", __func__,__LINE__);
+        regulator_disable(regVGP1lcm);
+        }
+#endif
+    return 0;
+}
+
+
+int DispTEpin_Enable(void)
+{
+        if(disptepinctrl != NULL){
+        pinctrl_select_state(disptepinctrl, dispte_en_h);
+        printk("%s,line = %d\n", __func__,__LINE__);
+        }else{
+        printk("%s,line = %d, error\n", __func__,__LINE__);
+        }
+        return 0;
+}
+
+int DispTEpin_Disable(void)
+{
+        if(disptepinctrl != NULL){
+        pinctrl_select_state(disptepinctrl, dispte_en_l);
+        //msleep(5);
+        //regulator_disable(regVGP2lcm);
+        printk("%s,line = %d\n", __func__,__LINE__);
+        }else{
+        printk("%s,line = %d, error\n", __func__,__LINE__);
+        }
+        return 0;
+}
+
+static int DispTE_use_gpio_probe(struct platform_device *pdev)
+{
+    //int ret = 0;
+    //struct task_struct *keyEvent_thread = NULL;
+             int retval;
+	printk("dispte_use_gpio_probe\n");
+
+	disptepinctrl = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(disptepinctrl)) {
+	        printk("IS_ERR(disptepinctrl) \n");
+	        return -1;	
+	}
+	dispte_en_l= pinctrl_lookup_state(disptepinctrl, "disptepin_cfg0");
+	if (IS_ERR(dispte_en_l)) {
+	        printk("IS_ERR(dispte_en_l) \n");
+	        return -1;	 
+	}
+           dispte_en_h = pinctrl_lookup_state(disptepinctrl, "disptepin_cfg1");
+           if (IS_ERR(dispte_en_h)) {
+          	printk("IS_ERR(dispte_en_h) \n");
+           return -1;	
+           }
+           // VGP1
+           if (regVGP1lcm == NULL){
+                regVGP1lcm = regulator_get(&pdev->dev, "vgp1");
+           }
+           retval = regulator_set_voltage(regVGP1lcm, 2800000, 2800000);
+           // VGP2
+           if (regVGP2lcm == NULL){
+                regVGP2lcm = regulator_get(&pdev->dev, "vgp2");
+           }
+           retval = regulator_set_voltage(regVGP2lcm, 1800000, 1800000);
+           if (retval != 0) {
+		printk("Failed to set reg-vgp6 voltage: %d\n", retval);
+		return -1;
+	}
+           LcmPowerOnPMIC(); // first to use
+        printk("dispte_use_gpio_probe OK \n");
+
+    return 0;
+}
+
+static int DispTE_use_gpio_remove(struct platform_device *dev)	
+{
+	return 0;
+}
+
+static struct platform_driver DispTE_use_gpio_driver = {
+	.probe	= DispTE_use_gpio_probe,
+	.remove  = DispTE_use_gpio_remove,
+	.driver    = {
+	.name       = "disp_gpio",
+	.of_match_table = DispTE_use_gpio_of_match,	
+	},
+};
+
+#endif
+
 static void lcm_suspend(void)
 {
 	unsigned int data_array[16];
