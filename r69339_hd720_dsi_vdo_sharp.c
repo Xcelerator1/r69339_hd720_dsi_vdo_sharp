@@ -62,6 +62,13 @@ extern int DispTEpin_Disable(void);
 #define MDELAY(n)                                             (lcm_util.mdelay(n))
 
 
+struct pinctrl *disptepinctrl = NULL;
+struct pinctrl_state *dispte_en_h = NULL;
+struct pinctrl_state *dispte_en_l = NULL;
+struct regulator *regVGP1lcm = NULL;
+struct regulator *regVGP2lcm = NULL;
+
+
 // ---------------------------------------------------------------------------
 //  Local Functions
 // ---------------------------------------------------------------------------
@@ -218,31 +225,6 @@ static void lcm_init(void)
         init_lcm_registers();
 
 }
-extern int LcmPowerOffPMIC_V18(void);
-extern int LcmPowerOffPMIC_V28(void);
-#ifdef CONFIG_MTK_DISPTE_GPIO
-static const struct of_device_id DispTE_use_gpio_of_match[] = {
-	{.compatible = "mediatek,DispTE_gpio"},
-	{},
-};
-
-struct pinctrl *disptepinctrl = NULL;
-struct pinctrl_state *dispte_en_h = NULL;
-struct pinctrl_state *dispte_en_l = NULL;
-struct regulator *regVGP1lcm = NULL;
-struct regulator *regVGP2lcm = NULL;
-
-int LcmPowerOnPMIC(void)
-{
-        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
-        printk("%s,line = %d\n", __func__,__LINE__);
-        regulator_enable(regVGP2lcm);
-        msleep(10);
-        regulator_enable(regVGP1lcm);
-        msleep(10);
-        }
-}
-
 int LcmPowerOffPMIC_V18(void)
 {
 #if 0
@@ -266,6 +248,23 @@ int LcmPowerOffPMIC_V28(void)
         }
 #endif
     return 0;
+}
+#ifdef CONFIG_MTK_DISPTE_GPIO
+static const struct of_device_id DispTE_use_gpio_of_match[] = {
+	{.compatible = "mediatek,DispTE_gpio"},
+	{},
+};
+
+
+int LcmPowerOnPMIC(void)
+{
+        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
+        printk("%s,line = %d\n", __func__,__LINE__);
+        regulator_enable(regVGP2lcm);
+        msleep(10);
+        regulator_enable(regVGP1lcm);
+        msleep(10);
+        }
 }
 
 
