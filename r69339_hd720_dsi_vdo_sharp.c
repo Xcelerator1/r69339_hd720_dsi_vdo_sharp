@@ -50,8 +50,30 @@ static LCM_UTIL_FUNCS lcm_util ;
 #if 0
 #define SET_RESET_PIN(v)    (lcm_util.set_reset_pin((v)))
 #else
-extern int DispTEpin_Enable(void);
-extern int DispTEpin_Disable(void);
+extern int int DispTEpin_Enable(void)
+{
+        if(disptepinctrl != NULL){
+        pinctrl_select_state(disptepinctrl, dispte_en_h);
+        printk("%s,line = %d\n", __func__,__LINE__);
+        }else{
+        printk("%s,line = %d, error\n", __func__,__LINE__);
+        }
+        return 0;
+};
+
+extern int int DispTEpin_Disable(void)
+{
+        if(disptepinctrl != NULL){
+        pinctrl_select_state(disptepinctrl, dispte_en_l);
+        //msleep(5);
+        //regulator_disable(regVGP2lcm);
+        printk("%s,line = %d\n", __func__,__LINE__);
+        }else{
+        printk("%s,line = %d, error\n", __func__,__LINE__);
+        }
+        return 0;
+};
+
 #define SET_RESET_PIN(v)    \
     if(v)                                           \
         DispTEpin_Enable(); \
@@ -195,7 +217,18 @@ static void init_lcm_registers(void)
         dsi_set_cmdq(data_array, 1, 1);
 }
 
-extern int LcmPowerOnPMIC(void);
+extern int 
+int LcmPowerOnPMIC(void)
+{
+        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
+        printk("%s,line = %d\n", __func__,__LINE__);
+        regulator_enable(regVGP2lcm);
+        msleep(10);
+        regulator_enable(regVGP1lcm);
+        msleep(10);
+        }
+};
+
 static void lcm_init(void)
 {
     //SET_RESET_PIN(1);
@@ -254,43 +287,6 @@ static const struct of_device_id DispTE_use_gpio_of_match[] = {
 	{.compatible = "mediatek,DispTE_gpio"},
 	{},
 };
-
-
-int LcmPowerOnPMIC(void)
-{
-        if(regVGP2lcm != NULL&&regVGP1lcm != NULL){
-        printk("%s,line = %d\n", __func__,__LINE__);
-        regulator_enable(regVGP2lcm);
-        msleep(10);
-        regulator_enable(regVGP1lcm);
-        msleep(10);
-        }
-}
-
-
-int DispTEpin_Enable(void)
-{
-        if(disptepinctrl != NULL){
-        pinctrl_select_state(disptepinctrl, dispte_en_h);
-        printk("%s,line = %d\n", __func__,__LINE__);
-        }else{
-        printk("%s,line = %d, error\n", __func__,__LINE__);
-        }
-        return 0;
-}
-
-int DispTEpin_Disable(void)
-{
-        if(disptepinctrl != NULL){
-        pinctrl_select_state(disptepinctrl, dispte_en_l);
-        //msleep(5);
-        //regulator_disable(regVGP2lcm);
-        printk("%s,line = %d\n", __func__,__LINE__);
-        }else{
-        printk("%s,line = %d, error\n", __func__,__LINE__);
-        }
-        return 0;
-}
 
 static int DispTE_use_gpio_probe(struct platform_device *pdev)
 {
@@ -427,9 +423,6 @@ static void lcm_update(unsigned int x, unsigned int y,
 
 }
 #endif
-
-
-
 
 /*
 static unsigned int lcm_compare_id(void)
